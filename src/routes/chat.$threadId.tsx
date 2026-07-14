@@ -222,8 +222,7 @@ function ChatPage() {
 
           <div className="border-t border-border/60 p-3">
             <PromptInput
-              onSubmit={(e) => {
-                e.preventDefault?.();
+              onSubmit={() => {
                 const text = input.trim();
                 if (!text || isLoading) return;
                 sendMessage({ text });

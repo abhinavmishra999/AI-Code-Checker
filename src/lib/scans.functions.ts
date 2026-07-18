@@ -167,9 +167,21 @@ export const fetchGithubRepo = createServerFn({ method: "POST" })
       headers,
     });
     if (!repoRes.ok) {
-      throw new Error(
-        `GitHub repo fetch failed (${repoRes.status}): ${await repoRes.text()}`,
-      );
+      const body = await repoRes.text();
+      if (repoRes.status === 404) {
+        throw new Error(
+          `Repository not found: ${owner}/${repo}. Check the URL, or if it's private, provide a GitHub token with 'repo' scope.`,
+        );
+      }
+      if (repoRes.status === 401 || repoRes.status === 403) {
+        const isRate = /rate limit/i.test(body);
+        throw new Error(
+          isRate
+            ? `GitHub API rate limit reached. Provide a personal access token to raise the limit.`
+            : `GitHub denied access (${repoRes.status}). If the repo is private, provide a valid token with 'repo' scope.`,
+        );
+      }
+      throw new Error(`GitHub repo fetch failed (${repoRes.status}): ${body}`);
     }
     const repoJson = (await repoRes.json()) as { default_branch: string };
     const branch = repoJson.default_branch;
